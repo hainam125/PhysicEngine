@@ -77,9 +77,11 @@ public class Game : MonoBehaviour
             bodyList[0].Move(velocity);
         }
 
+        if (Input.GetKeyDown(KeyCode.Q)) bodyList[0].Rotate(Mathf.PI / 4);
+
 
         for (var i = 0; i < bodyList.Count; i++) {
-            bodyList[i].Rotate(Mathf.PI * 0.5f * deltaTime);
+            //bodyList[i].Rotate(Mathf.PI * 0.5f * deltaTime);
             srList[i].SetBorderColor(Color.white);
         }
 
@@ -90,11 +92,15 @@ public class Game : MonoBehaviour
 
                 if (Collisions.IntersectPolygons(
                     bodyA.GetTransformedVertices(),
-                    bodyB.GetTransformedVertices())) {
+                    bodyB.GetTransformedVertices(),
+                    out var normal, out var depth)) {
 
 
                     srList[i].SetBorderColor(Color.red);
                     srList[j].SetBorderColor(Color.red);
+
+                    bodyA.Move(-depth * 0.5f * normal);
+                    bodyB.Move(depth * 0.5f * normal);
                 }
 
                 /*if(Collisions.IntersectCircles(
