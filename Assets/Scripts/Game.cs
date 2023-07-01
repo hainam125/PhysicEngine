@@ -24,8 +24,9 @@ public class Game : MonoBehaviour
         srList = new List<ShapeRenderer>();
         world = new FlatWorld();
 
-        var bodyCount = 20;
+        var bodyCount = 25;
         var padding = (right - left) * 0.05f;
+
         for (var i = 0; i < bodyCount; i++) {
             var type = (ShapeType)Utils.RandomInt(0, 2);
 
@@ -34,18 +35,20 @@ public class Game : MonoBehaviour
             var x = Utils.RandomFloat(left + padding, right - padding);
             var y = Utils.RandomFloat(bottom + padding, top - padding);
 
+            var isStatic = i > 0 && Utils.RandomBoolean();
+
             if (type == ShapeType.Circle) {
                 var radius = 1f;
                 sr = factory.CreateCircle(radius);
-                if (!FlatBody.CreateCircleBody(radius, new Vector3(x, y), 2, false, 0.5f, out body, out var errorMsg)) {
+                if (!FlatBody.CreateCircleBody(radius, new Vector3(x, y), 2, isStatic, 0.5f, out body, out var errorMsg)) {
                     Debug.LogError(errorMsg);
                 }
             }
             else if (type == ShapeType.Box) {
-                var width = 2f;
-                var height = 2f;
+                var width = 1.77f;
+                var height = 1.77f;
                 sr = factory.CreateRectangle(width, height);
-                if (!FlatBody.CreateBoxBody(width, height, new Vector3(x, y), 2, false, 0.5f, out body, out var errorMsg)) {
+                if (!FlatBody.CreateBoxBody(width, height, new Vector3(x, y), 2, isStatic, 0.5f, out body, out var errorMsg)) {
                     Debug.LogError(errorMsg);
                 }
             }
@@ -54,7 +57,13 @@ public class Game : MonoBehaviour
             }
             world.AddBody(body);
 
-            sr.SetColor(Utils.RandomColor());
+            if (isStatic) {
+                sr.SetColor(Color.green);
+                sr.SetBorderColor(Color.red);
+            }
+            else {
+                sr.SetColor(Utils.RandomColor());
+            }
             srList.Add(sr);
         }
     }

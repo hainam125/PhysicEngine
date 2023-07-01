@@ -46,9 +46,19 @@ public class FlatWorld {
             for (var j = i + 1; j < bodyList.Count; j++) {
                 var bodyB = bodyList[j];
 
+                if (bodyA.isStatic && bodyB.isStatic) continue;
+
                 if (Collide(bodyA, bodyB, out var normal, out var depth)) {
-                    bodyA.Move(-normal * depth / 2f);
-                    bodyB.Move(normal * depth / 2f);
+                    if (bodyA.isStatic) {
+                        bodyB.Move(normal * depth);
+                    }
+                    else if (bodyB.isStatic) {
+                        bodyA.Move(-normal * depth);
+                    }
+                    else {
+                        bodyA.Move(-normal * depth * 0.5f);
+                        bodyB.Move(normal * depth * 0.5f);
+                    }
 
                     ResolveCollision(bodyA, bodyB, normal, depth);
                 }
@@ -58,13 +68,21 @@ public class FlatWorld {
 
     private void ResolveCollision(FlatBody bodyA, FlatBody bodyB, Vector3 normal, float depth) {
         var relativeVel = bodyB.LinearVelocity - bodyA.LinearVelocity;
+
+        //if objects moving apart
+        if (Vector3.Dot(relativeVel, normal) > 0) {
+            return;
+        }
+
         var e = Mathf.Min(bodyA.restitution, bodyB.restitution);
 
         var j = -(1 + e) * Vector3.Dot(relativeVel, normal);
-        j /= (1 / bodyA.mass + 1 / bodyB.mass);
+        j /= (bodyA.invMass + bodyB.invMass);
 
-        bodyA.LinearVelocity -= j / bodyA.mass * normal;
-        bodyB.LinearVelocity += j / bodyB.mass * normal;
+        var impulse = j * normal;
+
+        bodyA.LinearVelocity -= impulse * bodyA.invMass;
+        bodyB.LinearVelocity += impulse * bodyB.invMass;
     }
 
     //push bodyB out side of bodyA

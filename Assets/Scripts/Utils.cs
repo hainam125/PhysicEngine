@@ -8,6 +8,10 @@ public class Utils {
         return GetRandom().Next(min, max);
     }
 
+    public static bool RandomBoolean() {
+        return RandomInt(0, 2) == 1;
+    }
+
     public static float RandomFloat(float min, float max) {
         return (float)(GetRandom().NextDouble() * (max - min) + min);
     }

@@ -15,6 +15,7 @@ public class FlatBody
 
     public readonly float density;
     public readonly float mass;
+    public readonly float invMass;
     public readonly float restitution;
     public readonly float area;
 
@@ -51,6 +52,13 @@ public class FlatBody
         this.width = width;
         this.height = height;
         this.shapeType = shapeType;
+
+        if (!isStatic) {
+            invMass = 1 / mass;
+        }
+        else {
+            invMass = 0f;
+        }
 
         if(shapeType == ShapeType.Box) {
             this.vertices = CreateBoxVertices(width, height);
