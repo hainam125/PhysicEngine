@@ -27,7 +27,7 @@ public class Game : MonoBehaviour
         var bodyCount = 10;
         var padding = (right - left) * 0.05f;
         for (var i = 0; i < bodyCount; i++) {
-            var type = ShapeType.Box;// (ShapeType)Utils.RandomInt(0, 2);
+            var type = (ShapeType)Utils.RandomInt(0, 2);
 
             FlatBody body = null;
             ShapeRenderer sr = null;
@@ -90,7 +90,35 @@ public class Game : MonoBehaviour
             for (var j = i + 1; j < bodyList.Count; j++) {
                 var bodyB = bodyList[j];
 
-                if (Collisions.IntersectPolygons(
+                if(bodyA.shapeType == ShapeType.Box && bodyB.shapeType == ShapeType.Circle) {
+                    if (Collisions.IntersectCirclePolygon(
+                    bodyB.Position, bodyB.radius,
+                    bodyA.GetTransformedVertices(),
+                    out var normal, out var depth)) {
+
+                        srList[i].SetBorderColor(Color.red);
+                        srList[j].SetBorderColor(Color.red);
+
+                        bodyA.Move(depth * 0.5f * normal);
+                        bodyB.Move(-depth * 0.5f * normal);
+                    }
+                }
+                else if (bodyB.shapeType == ShapeType.Box && bodyA.shapeType == ShapeType.Circle) {
+                    if (Collisions.IntersectCirclePolygon(
+                    bodyA.Position, bodyA.radius,
+                    bodyB.GetTransformedVertices(),
+                    out var normal, out var depth)) {
+
+                        srList[i].SetBorderColor(Color.red);
+                        srList[j].SetBorderColor(Color.red);
+
+                        bodyA.Move(-depth * 0.5f * normal);
+                        bodyB.Move(depth * 0.5f * normal);
+                    }
+                }
+
+
+                /*if (Collisions.IntersectPolygons(
                     bodyA.GetTransformedVertices(),
                     bodyB.GetTransformedVertices(),
                     out var normal, out var depth)) {
@@ -103,7 +131,7 @@ public class Game : MonoBehaviour
                     bodyB.Move(depth * 0.5f * normal);
                 }
 
-                /*if(Collisions.IntersectCircles(
+                if(Collisions.IntersectCircles(
                     bodyA.Position, bodyA.radius,
                     bodyB.Position, bodyB.radius,
                     out var normal, out var depth)) {

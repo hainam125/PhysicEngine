@@ -3,6 +3,80 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public static class Collisions {
+
+    public static bool IntersectCirclePolygon(Vector3 circleCenter, float circleRadius, Vector3[] vertices,
+        out Vector3 normal, out float depth) {
+
+        normal = Vector3.zero;
+        depth = float.MaxValue;
+
+        var axis = Vector3.zero;
+
+        bool check(Vector3 lAxis, ref Vector3 lNormal, ref float lDepth) {
+            ProjectVertices(vertices, lAxis, out var minA, out var maxA);
+            ProjectCircle(circleCenter, circleRadius, lAxis, out var minB, out var maxB);
+
+            if (minA >= maxB || minB >= maxA) return false;
+
+            var axisDepth = Mathf.Min(maxB - minA, maxA - minB);
+            if (axisDepth < lDepth) {
+                lDepth = axisDepth;
+                lNormal = lAxis;
+            }
+            return true;
+        }
+
+        for (var i = 0; i < vertices.Length; i++) {
+            var va = vertices[i];
+            var vb = vertices[(i + 1) % vertices.Length];
+
+            var edge = vb - va;
+            axis = new Vector3(-edge.y, edge.x).normalized;
+
+            if (!check(axis, ref normal, ref depth)) return false;
+        }
+
+        var cpIndex = FindClosestPointOnPolygon(circleCenter, vertices);
+        var cp = vertices[cpIndex];
+        axis = (cp - circleCenter).normalized;
+        if (!check(axis, ref normal, ref depth)) return false;
+
+        var polygonCenter = FindArithmeticMean(vertices);
+        var direction = polygonCenter - circleCenter;
+
+        if (Vector3.Dot(direction, normal) < 0) normal = -normal;
+
+        return true;
+    }
+
+    private static int FindClosestPointOnPolygon(Vector3 circleCenter, Vector3[] vertices) {
+        var result = -1;
+        var minDistSqr = float.MaxValue;
+        for (var i = 0; i < vertices.Length; i++) {
+            var distSqr = Vector3.SqrMagnitude(vertices[i] - circleCenter);
+            if (distSqr < minDistSqr) {
+                minDistSqr = distSqr;
+                result = i;
+            }
+        }
+        return result;
+    }
+
+    private static void ProjectCircle(Vector3 center, float radius, Vector3 axis, out float min, out float max) {
+        var directionAndRadius = axis * radius;
+        var p1 = center + directionAndRadius;
+        var p2 = center - directionAndRadius;
+
+        min = Vector3.Dot(p1, axis);
+        max = Vector3.Dot(p2, axis);
+
+        if (min > max) {
+            var t = min;
+            min = max;
+            max = t;
+        }
+    }
+
     public static bool IntersectPolygons(Vector3[] verticesA, Vector3[] verticesB,
         out Vector3 normal, out float depth) {
 
