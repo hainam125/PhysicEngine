@@ -9,7 +9,7 @@ public class FlatBody
     public Vector3 Position { get; private set; }
     private Vector3 linearVelocity;
     public float Rotation { get; private set; }
-    private float ratationVelocity;
+    private float rotationVelocity;
 
     public readonly float density;
     public readonly float mass;
@@ -35,7 +35,7 @@ public class FlatBody
         this.Position = position;
         this.linearVelocity = Vector3.zero;
         this.Rotation = 0f;
-        this.ratationVelocity = 0f;
+        this.rotationVelocity = 0f;
 
         this.density = density;
         this.mass = mass;
@@ -54,6 +54,11 @@ public class FlatBody
             this.transformedVertices = new Vector3[this.vertices.Length];
         }
         this.transformUpdateRequired = true;
+    }
+
+    public void Step(float time) {
+        Position += linearVelocity * time;
+        Rotation += rotationVelocity * time;
     }
 
     public void Move(Vector3 amount) {
@@ -149,22 +154,22 @@ public class FlatBody
 
     private static bool CheckBodyData(float area, float density, ref string errorMsg, ref float restitution, out float mass) {
         mass = 0f;
-        if (area < Config.MinBodySize) {
+        if (area < FlatWorld.MinBodySize) {
             errorMsg = "Area is too small";
             return false;
         }
 
-        if (area > Config.MaxBodySize) {
+        if (area > FlatWorld.MaxBodySize) {
             errorMsg = "Area is too large";
             return false;
         }
 
-        if (density < Config.MinDensity) {
+        if (density < FlatWorld.MinDensity) {
             errorMsg = "Density is too small";
             return false;
         }
 
-        if (density > Config.MaxDensity) {
+        if (density > FlatWorld.MaxDensity) {
             errorMsg = "Density is too large";
             return false;
         }

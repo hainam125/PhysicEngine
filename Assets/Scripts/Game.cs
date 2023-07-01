@@ -6,7 +6,7 @@ public class Game : MonoBehaviour
 {
     private Factory factory;
 
-    private List<FlatBody> bodyList;
+    private FlatWorld world;
     private List<ShapeRenderer> srList;
     private float left, right, bottom, top;
 
@@ -21,8 +21,8 @@ public class Game : MonoBehaviour
         left = camPos.x - orthoSize * ratio;
         right = camPos.x + orthoSize * ratio;
 
-        bodyList = new List<FlatBody>();
         srList = new List<ShapeRenderer>();
+        world = new FlatWorld();
 
         var bodyCount = 10;
         var padding = (right - left) * 0.05f;
@@ -52,7 +52,7 @@ public class Game : MonoBehaviour
             else {
                 Debug.LogError("st wrong!");
             }
-            bodyList.Add(body);
+            world.AddBody(body);
 
             sr.SetColor(Utils.RandomColor());
             srList.Add(sr);
@@ -71,81 +71,23 @@ public class Game : MonoBehaviour
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) dy++;
         if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) dy--;
 
+        world.GetBody(0, out var body);
+
         if(dx!= 0 || dy != 0) {
             var direction = new Vector3(dx, dy).normalized;
             var velocity = direction * speed * deltaTime;
-            bodyList[0].Move(velocity);
+            body.Move(velocity);
         }
 
-        if (Input.GetKeyDown(KeyCode.Q)) bodyList[0].Rotate(Mathf.PI / 4);
+        if (Input.GetKeyDown(KeyCode.Q)) body.Rotate(Mathf.PI / 2 * deltaTime);
 
-
-        for (var i = 0; i < bodyList.Count; i++) {
-            //bodyList[i].Rotate(Mathf.PI * 0.5f * deltaTime);
-            srList[i].SetBorderColor(Color.white);
-        }
-
-        for (var i = 0; i < bodyList.Count - 1; i++) {
-            var bodyA = bodyList[i];
-            for (var j = i + 1; j < bodyList.Count; j++) {
-                var bodyB = bodyList[j];
-
-                if(bodyA.shapeType == ShapeType.Box && bodyB.shapeType == ShapeType.Circle) {
-                    if (Collisions.IntersectCirclePolygon(
-                    bodyB.Position, bodyB.radius,
-                    bodyA.GetTransformedVertices(),
-                    out var normal, out var depth)) {
-
-                        srList[i].SetBorderColor(Color.red);
-                        srList[j].SetBorderColor(Color.red);
-
-                        bodyA.Move(depth * 0.5f * normal);
-                        bodyB.Move(-depth * 0.5f * normal);
-                    }
-                }
-                else if (bodyB.shapeType == ShapeType.Box && bodyA.shapeType == ShapeType.Circle) {
-                    if (Collisions.IntersectCirclePolygon(
-                    bodyA.Position, bodyA.radius,
-                    bodyB.GetTransformedVertices(),
-                    out var normal, out var depth)) {
-
-                        srList[i].SetBorderColor(Color.red);
-                        srList[j].SetBorderColor(Color.red);
-
-                        bodyA.Move(-depth * 0.5f * normal);
-                        bodyB.Move(depth * 0.5f * normal);
-                    }
-                }
-
-
-                /*if (Collisions.IntersectPolygons(
-                    bodyA.GetTransformedVertices(),
-                    bodyB.GetTransformedVertices(),
-                    out var normal, out var depth)) {
-
-
-                    srList[i].SetBorderColor(Color.red);
-                    srList[j].SetBorderColor(Color.red);
-
-                    bodyA.Move(-depth * 0.5f * normal);
-                    bodyB.Move(depth * 0.5f * normal);
-                }
-
-                if(Collisions.IntersectCircles(
-                    bodyA.Position, bodyA.radius,
-                    bodyB.Position, bodyB.radius,
-                    out var normal, out var depth)) {
-
-                    bodyA.Move(-depth * 0.5f * normal);
-                    bodyB.Move(depth * 0.5f * normal);
-                }*/
-            }
-        }
-
-        for (var i = 0; i < bodyList.Count; i++) {
-            srList[i].Pos = bodyList[i].Position;
-            srList[i].Rot = bodyList[i].Rotation;
-            bodyList[i].DrawDebug();
+        world.Step(deltaTime);
+        
+        for (var i = 0; i < world.BodyCount; i++) {
+            if (!world.GetBody(i, out var flatBody)) continue;
+            srList[i].Pos = flatBody.Position;
+            srList[i].Rot = flatBody.Rotation;
+            flatBody.DrawDebug();
         }
     }
 }
