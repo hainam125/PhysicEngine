@@ -7,9 +7,11 @@ public enum ShapeType { Circle = 0, Box =1 }
 public class FlatBody
 {
     public Vector3 Position { get; private set; }
-    private Vector3 linearVelocity;
+    public Vector3 LinearVelocity { get; internal set; }
     public float Rotation { get; private set; }
     private float rotationVelocity;
+
+    private Vector3 force;
 
     public readonly float density;
     public readonly float mass;
@@ -33,9 +35,11 @@ public class FlatBody
         bool isStatic, float radius, float width, float height, ShapeType shapeType) {
 
         this.Position = position;
-        this.linearVelocity = Vector3.zero;
+        this.LinearVelocity = Vector3.zero;
         this.Rotation = 0f;
         this.rotationVelocity = 0f;
+
+        this.force = Vector3.zero;
 
         this.density = density;
         this.mass = mass;
@@ -57,8 +61,13 @@ public class FlatBody
     }
 
     public void Step(float time) {
-        Position += linearVelocity * time;
+        LinearVelocity += force / mass * time;
+
+        Position += LinearVelocity * time;
         Rotation += rotationVelocity * time;
+
+        force = Vector3.zero;
+        transformUpdateRequired = true;
     }
 
     public void Move(Vector3 amount) {
@@ -74,6 +83,10 @@ public class FlatBody
     public void Rotate(float amount) {
         Rotation += amount;
         transformUpdateRequired = true;
+    }
+
+    public void AddForce(Vector3 amount) {
+        force = amount;
     }
 
     public Vector3[] GetTransformedVertices() {

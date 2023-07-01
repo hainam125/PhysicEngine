@@ -49,9 +49,22 @@ public class FlatWorld {
                 if (Collide(bodyA, bodyB, out var normal, out var depth)) {
                     bodyA.Move(-normal * depth / 2f);
                     bodyB.Move(normal * depth / 2f);
+
+                    ResolveCollision(bodyA, bodyB, normal, depth);
                 }
             }
         }
+    }
+
+    private void ResolveCollision(FlatBody bodyA, FlatBody bodyB, Vector3 normal, float depth) {
+        var relativeVel = bodyB.LinearVelocity - bodyA.LinearVelocity;
+        var e = Mathf.Min(bodyA.restitution, bodyB.restitution);
+
+        var j = -(1 + e) * Vector3.Dot(relativeVel, normal);
+        j /= (1 / bodyA.mass + 1 / bodyB.mass);
+
+        bodyA.LinearVelocity -= j / bodyA.mass * normal;
+        bodyB.LinearVelocity += j / bodyB.mass * normal;
     }
 
     //push bodyB out side of bodyA

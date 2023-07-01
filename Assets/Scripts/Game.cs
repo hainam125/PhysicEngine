@@ -24,7 +24,7 @@ public class Game : MonoBehaviour
         srList = new List<ShapeRenderer>();
         world = new FlatWorld();
 
-        var bodyCount = 10;
+        var bodyCount = 20;
         var padding = (right - left) * 0.05f;
         for (var i = 0; i < bodyCount; i++) {
             var type = (ShapeType)Utils.RandomInt(0, 2);
@@ -64,7 +64,7 @@ public class Game : MonoBehaviour
 
         var dx = 0f;
         var dy = 0f;
-        var speed = 8f;
+        var forceMagnitude = 48f;
 
         if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) dx--;
         if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) dx++;
@@ -74,9 +74,9 @@ public class Game : MonoBehaviour
         world.GetBody(0, out var body);
 
         if(dx!= 0 || dy != 0) {
-            var direction = new Vector3(dx, dy).normalized;
-            var velocity = direction * speed * deltaTime;
-            body.Move(velocity);
+            var forceDirection = new Vector3(dx, dy).normalized;
+            var force = forceDirection * forceMagnitude;
+            body.AddForce(force);
         }
 
         if (Input.GetKeyDown(KeyCode.Q)) body.Rotate(Mathf.PI / 2 * deltaTime);
@@ -88,6 +88,20 @@ public class Game : MonoBehaviour
             srList[i].Pos = flatBody.Position;
             srList[i].Rot = flatBody.Rotation;
             flatBody.DrawDebug();
+        }
+
+        WrapScene();
+    }
+
+    private void WrapScene() {
+        var camWidth = right - left;
+        var camHeight = top - bottom;
+        for (var i = 0; i < world.BodyCount; i++) {
+            if (!world.GetBody(i, out var body)) continue;
+            if (body.Position.x < left) body.MoveTo(body.Position + new Vector3(camWidth, 0f));
+            if (body.Position.x > right) body.MoveTo(body.Position - new Vector3(camWidth, 0f));
+            if (body.Position.y < bottom) body.MoveTo(body.Position + new Vector3(0f, camHeight));
+            if (body.Position.y > top) body.MoveTo(body.Position - new Vector3(0f, camHeight));
         }
     }
 }
