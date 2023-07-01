@@ -10,6 +10,14 @@ public class ShapeRenderer
     private Transform transform;
 
     public Vector3 Pos { get => transform.position; set => transform.position = value; }
+    public float Rot {
+        get => transform.eulerAngles.z * Mathf.Deg2Rad;
+        set {
+            var angle = transform.eulerAngles;
+            angle.z = value * Mathf.Rad2Deg;
+            transform.eulerAngles = angle;
+        }
+    }
 
     public ShapeRenderer(Transform border, Transform body) {
         this.inner = border.GetComponent<SpriteRenderer>();
