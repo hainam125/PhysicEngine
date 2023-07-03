@@ -7,6 +7,14 @@ public static class Collisions {
     public static bool IntersectCirclePolygon(Vector3 circleCenter, float circleRadius, Vector3[] vertices,
         out Vector3 normal, out float depth) {
 
+        var polygonCenter = FindArithmeticMean(vertices);
+        return IntersectCirclePolygon(circleCenter, circleRadius, polygonCenter, vertices, out normal, out depth);
+    }
+
+    public static bool IntersectCirclePolygon(Vector3 circleCenter, float circleRadius,
+         Vector3 polygonCenter, Vector3[] vertices,
+        out Vector3 normal, out float depth) {
+
         normal = Vector3.zero;
         depth = float.MaxValue;
 
@@ -41,7 +49,6 @@ public static class Collisions {
         axis = (cp - circleCenter).normalized;
         if (!check(axis, ref normal, ref depth)) return false;
 
-        var polygonCenter = FindArithmeticMean(vertices);
         var direction = polygonCenter - circleCenter;
 
         if (Vector3.Dot(direction, normal) < 0) normal = -normal;
@@ -80,6 +87,14 @@ public static class Collisions {
     public static bool IntersectPolygons(Vector3[] verticesA, Vector3[] verticesB,
         out Vector3 normal, out float depth) {
 
+        var centerA = FindArithmeticMean(verticesA);
+        var centerB = FindArithmeticMean(verticesB);
+        return IntersectPolygons(centerA, verticesA, centerB, verticesB, out normal, out depth);
+    }
+
+    public static bool IntersectPolygons(Vector3 centerA, Vector3[] verticesA, Vector3 centerB, Vector3[] verticesB,
+        out Vector3 normal, out float depth) {
+
         normal = Vector3.zero;
         depth = float.MaxValue;
 
@@ -108,8 +123,6 @@ public static class Collisions {
         if (!check(verticesA, ref normal, ref depth)) return false;
         if (!check(verticesB, ref normal, ref depth)) return false;
 
-        var centerA = FindArithmeticMean(verticesA);
-        var centerB = FindArithmeticMean(verticesB);
         var direction = centerB - centerA;
 
         if (Vector3.Dot(direction, normal) < 0) normal = -normal;

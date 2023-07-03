@@ -68,8 +68,12 @@ public class FlatBody
         this.transformUpdateRequired = true;
     }
 
-    public void Step(float time) {
-        LinearVelocity += force / mass * time;
+    internal void Step(float time, Vector3 gravity) {
+        //LinearVelocity += force / mass * time;
+
+        if (isStatic) return;
+
+        LinearVelocity += gravity * time;
 
         Position += LinearVelocity * time;
         Rotation += rotationVelocity * time;

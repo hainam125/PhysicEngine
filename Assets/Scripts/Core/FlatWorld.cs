@@ -15,7 +15,7 @@ public class FlatWorld {
     public int BodyCount => bodyList.Count;
 
     public FlatWorld() {
-        gravity = new Vector3(0, 9.81f);
+        gravity = new Vector3(0, -9.81f);
         bodyList = new List<FlatBody>();
     }
 
@@ -37,7 +37,7 @@ public class FlatWorld {
     public void Step(float time) {
         //movement
         for (var i = 0; i < bodyList.Count; i++) {
-            bodyList[i].Step(time);
+            bodyList[i].Step(time, gravity);
         }
 
         //collision
@@ -96,12 +96,14 @@ public class FlatWorld {
         if (shapeTypeA is ShapeType.Box) {
             if (shapeTypeB is ShapeType.Box) {
                 return Collisions.IntersectPolygons(
-                    bodyA.GetTransformedVertices(), bodyB.GetTransformedVertices(),
+                    bodyA.Position, bodyA.GetTransformedVertices(),
+                    bodyB.Position, bodyB.GetTransformedVertices(),
                     out normal, out depth);
             }
             else if (shapeTypeB is ShapeType.Circle) {
                 bool result = Collisions.IntersectCirclePolygon(
-                    bodyB.Position, bodyB.radius, bodyA.GetTransformedVertices(),
+                    bodyB.Position, bodyB.radius,
+                    bodyA.Position, bodyA.GetTransformedVertices(),
                     out normal, out depth);
 
                 normal = -normal;
@@ -111,7 +113,8 @@ public class FlatWorld {
         else if (shapeTypeA is ShapeType.Circle) {
             if (shapeTypeB is ShapeType.Box) {
                 return Collisions.IntersectCirclePolygon(
-                    bodyA.Position, bodyA.radius, bodyB.GetTransformedVertices(),
+                    bodyA.Position, bodyA.radius,
+                    bodyB.Position, bodyB.GetTransformedVertices(),
                     out normal, out depth);
             }
             else if (shapeTypeB is ShapeType.Circle) {

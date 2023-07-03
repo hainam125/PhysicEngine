@@ -24,6 +24,33 @@ public class Game : MonoBehaviour
         srList = new List<ShapeRenderer>();
         world = new FlatWorld();
 
+        //CreateRandom();
+        CreateGravity();
+    }
+
+    private void CreateGravity() {
+        var padding = (right - left) * 0.1f;
+
+        CreateBox(right - left - padding * 2, 3f, new Vector3(0, -10), true, Color.gray);
+    }
+
+    private void CreateBox(float width, float height, Vector3 position, bool isStatic, Color color) {
+        FlatBody.CreateBoxBody(width, height, position, 1f, isStatic, 0.5f, out var body, out _);
+        world.AddBody(body);
+        var sr = factory.CreateRectangle(width, height);
+        sr.SetColor(color);
+        srList.Add(sr);
+    }
+
+    private void CreateCircle(float radius, Vector3 position, bool isStatic, Color color) {
+        FlatBody.CreateCircleBody(radius, position, 1f, isStatic, 0.5f, out var body, out _);
+        world.AddBody(body);
+        var sr = factory.CreateCircle(radius);
+        sr.SetColor(color);
+        srList.Add(sr);
+    }
+
+    private void CreateRandom() {
         var bodyCount = 25;
         var padding = (right - left) * 0.05f;
 
@@ -71,6 +98,7 @@ public class Game : MonoBehaviour
     private void Update() {
         var deltaTime = Time.deltaTime;
 
+        /*
         var dx = 0f;
         var dy = 0f;
         var forceMagnitude = 48f;
@@ -83,12 +111,30 @@ public class Game : MonoBehaviour
         world.GetBody(0, out var body);
 
         if(dx!= 0 || dy != 0) {
+            //var moveDirection = new Vector3(dx, dy).normalized;
+            //var movement = deltaTime * 8f * moveDirection;
+            //body.Move(movement);
             var forceDirection = new Vector3(dx, dy).normalized;
             var force = forceDirection * forceMagnitude;
             body.AddForce(force);
         }
 
         if (Input.GetKeyDown(KeyCode.Q)) body.Rotate(Mathf.PI / 2 * deltaTime);
+        */
+
+        if (Input.GetMouseButtonDown(0)) {
+            var width = Utils.RandomFloat(1f, 2f);
+            var height = Utils.RandomFloat(1f, 2f);
+            var mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mousePos.z = 0;
+            CreateBox(width, height, mousePos, false, Utils.RandomColor());
+        }
+        if (Input.GetMouseButtonDown(1)) {
+            var radius = Utils.RandomFloat(0.75f, 1.5f);
+            var mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mousePos.z = 0;
+            CreateCircle(radius, mousePos, false, Utils.RandomColor());
+        }
 
         world.Step(deltaTime);
         
@@ -99,7 +145,7 @@ public class Game : MonoBehaviour
             flatBody.DrawDebug();
         }
 
-        WrapScene();
+        //WrapScene();
     }
 
     private void WrapScene() {
