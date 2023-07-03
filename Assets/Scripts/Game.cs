@@ -1,6 +1,8 @@
-using System.Collections;
+using System.Diagnostics;
 using System.Collections.Generic;
 using UnityEngine;
+
+using Debug = UnityEngine.Debug;
 
 public class Game : MonoBehaviour
 {
@@ -10,6 +12,7 @@ public class Game : MonoBehaviour
     private List<ShapeRenderer> srList;
     private float left, right, bottom, top;
     private List<(FlatBody, ShapeRenderer)> removeBodyIndices;
+    private Stopwatch watch;
 
     private void Awake() {
         factory = GetComponent<Factory>();
@@ -28,6 +31,8 @@ public class Game : MonoBehaviour
 
         //CreateRandom();
         CreateGravity();
+
+        watch = new Stopwatch();
     }
 
     private void CreateGravity() {
@@ -138,7 +143,9 @@ public class Game : MonoBehaviour
             CreateCircle(radius, mousePos, false, Utils.RandomColor());
         }
 
-        world.Step(deltaTime);
+        watch.Restart();
+        world.Step(deltaTime, 15);
+        watch.Stop();
 
         removeBodyIndices.Clear();
         for (var i = 0; i < world.BodyCount; i++) {
@@ -158,6 +165,8 @@ public class Game : MonoBehaviour
         }
 
         //WrapScene();
+
+        if (Input.GetKeyDown(KeyCode.Space)) Debug.Log($"{world.BodyCount} bodies with step time: {watch.Elapsed.TotalMilliseconds}");
     }
 
     private void WrapScene() {

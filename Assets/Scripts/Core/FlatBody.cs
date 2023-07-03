@@ -72,10 +72,12 @@ public class FlatBody
         this.aabbUpdateRequired = true;
     }
 
-    internal void Step(float time, Vector3 gravity) {
-        //LinearVelocity += force / mass * time;
-
+    internal void Step(float time, Vector3 gravity, int iterations) {
         if (isStatic) return;
+
+        time /= iterations;
+
+        //LinearVelocity += force / mass * time;
 
         LinearVelocity += gravity * time;
 
