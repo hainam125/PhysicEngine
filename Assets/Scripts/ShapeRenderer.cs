@@ -19,6 +19,8 @@ public class ShapeRenderer
         }
     }
 
+    public GameObject gameObject => transform.gameObject;
+
     public ShapeRenderer(Transform border, Transform body) {
         this.inner = border.GetComponent<SpriteRenderer>();
         this.body = body.GetComponent<SpriteRenderer>();

@@ -30,6 +30,9 @@ public class FlatBody
     private Vector3[] transformedVertices;
     private bool transformUpdateRequired;
 
+    private FlatAABB aabb;
+    private bool aabbUpdateRequired;
+
     public readonly ShapeType shapeType;
 
     public FlatBody(Vector3 position, float density, float mass, float restitution, float area,
@@ -66,6 +69,7 @@ public class FlatBody
             this.transformedVertices = new Vector3[this.vertices.Length];
         }
         this.transformUpdateRequired = true;
+        this.aabbUpdateRequired = true;
     }
 
     internal void Step(float time, Vector3 gravity) {
@@ -80,21 +84,25 @@ public class FlatBody
 
         force = Vector3.zero;
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
     public void Move(Vector3 amount) {
         Position += amount;
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
     public void MoveTo(Vector3 position) {
         Position = position;
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
     public void Rotate(float amount) {
         Rotation += amount;
         transformUpdateRequired = true;
+        aabbUpdateRequired = true;
     }
 
     public void AddForce(Vector3 amount) {
@@ -111,6 +119,36 @@ public class FlatBody
         }
         transformUpdateRequired = false;
         return transformedVertices;
+    }
+
+    public FlatAABB GetAABB() {
+        if (aabbUpdateRequired) {
+            float minX = float.MaxValue;
+            float minY = float.MaxValue;
+            float maxX = float.MinValue;
+            float maxY = float.MinValue;
+            if (shapeType == ShapeType.Box) {
+                var vertices = GetTransformedVertices();
+
+                for (int i = 0; i < vertices.Length; i++) {
+                    var v = vertices[i];
+
+                    if (v.x < minX) { minX = v.x; }
+                    if (v.x > maxX) { maxX = v.x; }
+                    if (v.y < minY) { minY = v.y; }
+                    if (v.y > maxY) { maxY = v.y; }
+                }
+            }
+            if (shapeType == ShapeType.Circle) {
+                minX = Position.x - radius;
+                minY = Position.x - radius;
+                maxX = Position.y + radius;
+                maxY = Position.y + radius;
+            }
+            aabb = new FlatAABB(minX, minY, maxX, maxY);
+        }
+        aabbUpdateRequired = false;
+        return aabb;
     }
 
     public void DrawDebug() {

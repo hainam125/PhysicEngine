@@ -9,6 +9,7 @@ public class Game : MonoBehaviour
     private FlatWorld world;
     private List<ShapeRenderer> srList;
     private float left, right, bottom, top;
+    private List<(FlatBody, ShapeRenderer)> removeBodyIndices;
 
     private void Awake() {
         factory = GetComponent<Factory>();
@@ -21,6 +22,7 @@ public class Game : MonoBehaviour
         left = camPos.x - orthoSize * ratio;
         right = camPos.x + orthoSize * ratio;
 
+        removeBodyIndices = new List<(FlatBody, ShapeRenderer)>();
         srList = new List<ShapeRenderer>();
         world = new FlatWorld();
 
@@ -137,12 +139,22 @@ public class Game : MonoBehaviour
         }
 
         world.Step(deltaTime);
-        
+
+        removeBodyIndices.Clear();
         for (var i = 0; i < world.BodyCount; i++) {
             if (!world.GetBody(i, out var flatBody)) continue;
-            srList[i].Pos = flatBody.Position;
-            srList[i].Rot = flatBody.Rotation;
+            var sr = srList[i];
+            sr.Pos = flatBody.Position;
+            sr.Rot = flatBody.Rotation;
             flatBody.DrawDebug();
+
+            var box = flatBody.GetAABB();
+            if (box.Max.y < bottom) removeBodyIndices.Add((flatBody, sr));
+        }
+        for(var i =0; i < removeBodyIndices.Count; i++) {
+            world.RemoveBody(removeBodyIndices[i].Item1);
+            srList.Remove(removeBodyIndices[i].Item2);
+            Destroy(removeBodyIndices[i].Item2.gameObject);
         }
 
         //WrapScene();
