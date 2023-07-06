@@ -13,6 +13,7 @@ public class FlatWorld {
     public const int MaxIterations = 100;
 
     private List<FlatBody> bodyList;
+    private List<FlatManifold> contactList;
     private Vector3 gravity;
 
     public int BodyCount => bodyList.Count;
@@ -20,6 +21,7 @@ public class FlatWorld {
     public FlatWorld() {
         gravity = new Vector3(0, -9.81f);
         bodyList = new List<FlatBody>();
+        contactList = new List<FlatManifold>();
     }
 
     public void AddBody(FlatBody body) {
@@ -45,6 +47,7 @@ public class FlatWorld {
                 bodyList[i].Step(time, gravity, iterations);
             }
 
+            contactList.Clear();
             //collision
             for (var i = 0; i < bodyList.Count - 1; i++) {
                 var bodyA = bodyList[i];
@@ -64,15 +67,24 @@ public class FlatWorld {
                             bodyA.Move(-normal * depth * 0.5f);
                             bodyB.Move(normal * depth * 0.5f);
                         }
-
-                        ResolveCollision(bodyA, bodyB, normal, depth);
+                        var contact = new FlatManifold(bodyA, bodyB, normal, depth, Vector3.zero, Vector3.zero, 0);
+                        contactList.Add(contact);
                     }
                 }
+            }
+
+            for(var i =0; i < contactList.Count; i++) {
+                ResolveCollision(contactList[i]);
             }
         }
     }
 
-    private void ResolveCollision(FlatBody bodyA, FlatBody bodyB, Vector3 normal, float depth) {
+    private void ResolveCollision(in FlatManifold contact) {
+        var bodyA = contact.bodyA;
+        var bodyB = contact.bodyB;
+        var normal = contact.normal;
+        var depth = contact.depth;
+
         var relativeVel = bodyB.LinearVelocity - bodyA.LinearVelocity;
 
         //if objects moving apart
