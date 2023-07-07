@@ -143,8 +143,8 @@ public class FlatBody
             }
             if (shapeType == ShapeType.Circle) {
                 minX = Position.x - radius;
-                minY = Position.x - radius;
-                maxX = Position.y + radius;
+                minY = Position.y - radius;
+                maxX = Position.x + radius;
                 maxY = Position.y + radius;
             }
             aabb = new FlatAABB(minX, minY, maxX, maxY);
@@ -161,6 +161,7 @@ public class FlatBody
                 Debug.DrawLine(a, b, Color.white);
             }
         }
+        //Debug.DrawLine(aabb.Min, aabb.Max, Color.black);
     }
 
     #region Factory

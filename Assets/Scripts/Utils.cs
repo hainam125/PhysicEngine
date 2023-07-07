@@ -19,4 +19,12 @@ public class Utils {
     public static Color RandomColor() {
         return UnityEngine.Random.ColorHSV();
     }
+
+    public static bool NearlyEqual(float a, float b) {
+        return Mathf.Abs(a - b) < 0.0005f;//meter
+    }
+
+    public static bool NearlyEqual(Vector3 a, Vector3 b) {
+        return NearlyEqual(a.x, b.x) && NearlyEqual(a.y, b.y);
+    }
 }

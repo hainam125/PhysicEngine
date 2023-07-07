@@ -14,6 +14,7 @@ public class FlatWorld {
 
     private List<FlatBody> bodyList;
     private List<FlatManifold> contactList;
+    private List<Vector3> contactPointList;
     private Vector3 gravity;
 
     public int BodyCount => bodyList.Count;
@@ -22,6 +23,7 @@ public class FlatWorld {
         gravity = new Vector3(0, -9.81f);
         bodyList = new List<FlatBody>();
         contactList = new List<FlatManifold>();
+        contactPointList = new List<Vector3>();
     }
 
     public void AddBody(FlatBody body) {
@@ -51,12 +53,16 @@ public class FlatWorld {
             //collision
             for (var i = 0; i < bodyList.Count - 1; i++) {
                 var bodyA = bodyList[i];
+                var aabbA = bodyA.GetAABB();
                 for (var j = i + 1; j < bodyList.Count; j++) {
                     var bodyB = bodyList[j];
 
                     if (bodyA.isStatic && bodyB.isStatic) continue;
 
-                    if (Collide(bodyA, bodyB, out var normal, out var depth)) {
+                    var aabbB = bodyB.GetAABB();
+                    if (!Collisions.IntersectAABBs(aabbA, aabbB)) continue;
+
+                    if (Collisions.Collide(bodyA, bodyB, out var normal, out var depth)) {
                         if (bodyA.isStatic) {
                             bodyB.Move(normal * depth);
                         }
@@ -67,14 +73,29 @@ public class FlatWorld {
                             bodyA.Move(-normal * depth * 0.5f);
                             bodyB.Move(normal * depth * 0.5f);
                         }
-                        var contact = new FlatManifold(bodyA, bodyB, normal, depth, Vector3.zero, Vector3.zero, 0);
+
+                        Collisions.FindContactPoint(bodyA, bodyB, out var contact1, out var contact2, out var contactCount);
+                        var contact = new FlatManifold(bodyA, bodyB, normal, depth, contact1, contact2, contactCount);
                         contactList.Add(contact);
                     }
                 }
             }
 
-            for(var i =0; i < contactList.Count; i++) {
-                ResolveCollision(contactList[i]);
+            contactPointList.Clear();
+            for (var i =0; i < contactList.Count; i++) {
+                var contact = contactList[i];
+                if (contact.contactCount > 0) {
+                    if (!contactPointList.Contains(contact.contact1)) {
+                        contactPointList.Add(contact.contact1);
+                    }
+                    if (contact.contactCount > 1 && !contactPointList.Contains(contact.contact2)) {
+                        contactPointList.Add(contact.contact2);
+                    }
+                }
+                ResolveCollision(contact);
+            }
+            foreach (var point in contactPointList) {
+                Debug.DrawRay(point - Vector3.up * 0.25f, Vector3.up * 0.5f, Color.green, 0.05f);
             }
         }
     }
@@ -101,49 +122,6 @@ public class FlatWorld {
 
         bodyA.LinearVelocity -= impulse * bodyA.invMass;
         bodyB.LinearVelocity += impulse * bodyB.invMass;
-    }
-
-    //push bodyB out side of bodyA
-    private bool Collide(FlatBody bodyA, FlatBody bodyB, out Vector3 normal, out float depth) {
-        normal = Vector3.zero;
-        depth = 0f;
-
-        var shapeTypeA = bodyA.shapeType;
-        var shapeTypeB = bodyB.shapeType;
-
-        if (shapeTypeA is ShapeType.Box) {
-            if (shapeTypeB is ShapeType.Box) {
-                return Collisions.IntersectPolygons(
-                    bodyA.Position, bodyA.GetTransformedVertices(),
-                    bodyB.Position, bodyB.GetTransformedVertices(),
-                    out normal, out depth);
-            }
-            else if (shapeTypeB is ShapeType.Circle) {
-                bool result = Collisions.IntersectCirclePolygon(
-                    bodyB.Position, bodyB.radius,
-                    bodyA.Position, bodyA.GetTransformedVertices(),
-                    out normal, out depth);
-
-                normal = -normal;
-                return result;
-            }
-        }
-        else if (shapeTypeA is ShapeType.Circle) {
-            if (shapeTypeB is ShapeType.Box) {
-                return Collisions.IntersectCirclePolygon(
-                    bodyA.Position, bodyA.radius,
-                    bodyB.Position, bodyB.GetTransformedVertices(),
-                    out normal, out depth);
-            }
-            else if (shapeTypeB is ShapeType.Circle) {
-                return Collisions.IntersectCircles(
-                    bodyA.Position, bodyA.radius,
-                    bodyB.Position, bodyB.radius,
-                    out normal, out depth);
-            }
-        }
-
-        return false;
     }
 }
 

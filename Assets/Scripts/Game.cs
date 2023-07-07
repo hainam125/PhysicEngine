@@ -14,6 +14,12 @@ public class Game : MonoBehaviour
     private List<(FlatBody, ShapeRenderer)> removeBodyIndices;
     private Stopwatch watch;
 
+    private double totalWorldStepTime;
+    private int totalBodyCount;
+    private int totalSampleCount;
+    private Stopwatch sampleTimer;
+    private string bodyCountString, worldStepTimeString;
+
     private void Awake() {
         factory = GetComponent<Factory>();
         var cam = FindObjectOfType<Camera>();
@@ -33,6 +39,8 @@ public class Game : MonoBehaviour
         CreateGravity();
 
         watch = new Stopwatch();
+        sampleTimer = new Stopwatch();
+        sampleTimer.Start();
     }
 
     private void CreateGravity() {
@@ -143,9 +151,22 @@ public class Game : MonoBehaviour
             CreateCircle(radius, mousePos, false, Utils.RandomColor());
         }
 
+        if (sampleTimer.Elapsed.TotalSeconds > 1d) {
+            bodyCountString = "BodyCount: " + System.Math.Round((double)totalBodyCount / totalSampleCount, 4).ToString();
+            worldStepTimeString = "StepTime: " + System.Math.Round(totalWorldStepTime / totalSampleCount, 5).ToString();
+            totalWorldStepTime = 0;
+            totalBodyCount = 0;
+            totalSampleCount = 0;
+            sampleTimer.Restart();
+        }
+
         watch.Restart();
         world.Step(deltaTime, 15);
         watch.Stop();
+
+        totalWorldStepTime += watch.ElapsedMilliseconds;
+        totalBodyCount += world.BodyCount;
+        totalSampleCount++;
 
         removeBodyIndices.Clear();
         for (var i = 0; i < world.BodyCount; i++) {
@@ -167,6 +188,11 @@ public class Game : MonoBehaviour
         //WrapScene();
 
         if (Input.GetKeyDown(KeyCode.Space)) Debug.Log($"{world.BodyCount} bodies with step time: {watch.Elapsed.TotalMilliseconds}");
+    }
+
+    private void OnGUI() {
+        GUI.Label(new Rect(20, 0, 200, 30), bodyCountString);
+        GUI.Label(new Rect(20, 50, 200, 30), worldStepTimeString);
     }
 
     private void WrapScene() {
