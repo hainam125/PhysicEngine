@@ -46,15 +46,20 @@ public class Game : MonoBehaviour
     private void CreateGravity() {
         var padding = (right - left) * 0.1f;
 
-        CreateBox(right - left - padding * 2, 3f, new Vector3(0, -10), true, Color.gray);
+        var body = CreateBox(right - left - padding * 2, 3f, new Vector3(0, -10), true, Color.gray);
+        body = CreateBox(20f, 2f, new Vector3(-10, 3f), true, Color.cyan);
+        body.Rotate(-20 * Mathf.Deg2Rad);
+        body = CreateBox(15f, 2f, new Vector3(10, 10f), true, Color.cyan);
+        body.Rotate(20 * Mathf.Deg2Rad);
     }
 
-    private void CreateBox(float width, float height, Vector3 position, bool isStatic, Color color) {
+    private FlatBody CreateBox(float width, float height, Vector3 position, bool isStatic, Color color) {
         FlatBody.CreateBoxBody(width, height, position, 1f, isStatic, 0.5f, out var body, out _);
         world.AddBody(body);
         var sr = factory.CreateRectangle(width, height);
         sr.SetColor(color);
         srList.Add(sr);
+        return body;
     }
 
     private void CreateCircle(float radius, Vector3 position, bool isStatic, Color color) {

@@ -18,6 +18,8 @@ public class FlatBody
     public readonly float invMass;
     public readonly float restitution;
     public readonly float area;
+    public readonly float inertia;
+    public readonly float invInertia;
 
     public readonly bool isStatic;
 
@@ -56,12 +58,17 @@ public class FlatBody
         this.height = height;
         this.shapeType = shapeType;
 
+        this.inertia = CalculateRotationalInertia();
+
         if (!isStatic) {
-            invMass = 1 / mass;
+            this.invMass = 1f / mass;
+            this.invInertia = 1f / inertia;
         }
         else {
-            invMass = 0f;
+            this.invMass = 0f;
+            this.invInertia = 0f;
         }
+
 
         if(shapeType == ShapeType.Box) {
             this.vertices = CreateBoxVertices(width, height);
@@ -70,6 +77,19 @@ public class FlatBody
         }
         this.transformUpdateRequired = true;
         this.aabbUpdateRequired = true;
+    }
+
+    //https://en.wikipedia.org/wiki/List_of_moments_of_inertia
+    private float CalculateRotationalInertia() {
+        if (shapeType == ShapeType.Circle) {
+            return 0.5f * mass * radius * radius;
+        }
+        else if (shapeType == ShapeType.Box) {
+            return (1f / 12f) * mass * (width * width + height * height);
+        }
+        else {
+            throw new System.ArgumentOutOfRangeException(shapeType + "is invalid!");
+        }
     }
 
     internal void Step(float time, Vector3 gravity, int iterations) {
