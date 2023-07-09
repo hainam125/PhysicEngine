@@ -13,8 +13,7 @@ public class FlatWorld {
     public const int MaxIterations = 100;
 
     private List<FlatBody> bodyList;
-    private List<FlatManifold> contactList;
-    private List<Vector3> contactPointList;
+    private List<(int, int)> contactPairs;
     private Vector3 gravity;
 
     public int BodyCount => bodyList.Count;
@@ -22,8 +21,7 @@ public class FlatWorld {
     public FlatWorld() {
         gravity = new Vector3(0, -9.81f);
         bodyList = new List<FlatBody>();
-        contactList = new List<FlatManifold>();
-        contactPointList = new List<Vector3>();
+        contactPairs = new List<(int, int)>();
     }
 
     public void AddBody(FlatBody body) {
@@ -45,51 +43,50 @@ public class FlatWorld {
         totalIterations = Mathf.Clamp(totalIterations, MinIterations, MaxIterations);
 
         for (var curIteration = 0; curIteration < totalIterations; curIteration++) {
-            //movement
-            for (var i = 0; i < bodyList.Count; i++) {
-                bodyList[i].Step(time, gravity, totalIterations);
+            contactPairs.Clear();
+            StepBodies(time, totalIterations);
+            BroadPhase();
+            NarrowPhase();
+        }
+    }
+
+    private void BroadPhase() {
+        for (var i = 0; i < bodyList.Count - 1; i++) {
+            var bodyA = bodyList[i];
+            var aabbA = bodyA.GetAABB();
+            for (var j = i + 1; j < bodyList.Count; j++) {
+                var bodyB = bodyList[j];
+
+                if (bodyA.isStatic && bodyB.isStatic) continue;
+
+                var aabbB = bodyB.GetAABB();
+                if (!Collisions.IntersectAABBs(aabbA, aabbB)) continue;
+
+                contactPairs.Add((i, j));
             }
+        }
+    }
 
-            contactList.Clear();
-            //collision
-            for (var i = 0; i < bodyList.Count - 1; i++) {
-                var bodyA = bodyList[i];
-                var aabbA = bodyA.GetAABB();
-                for (var j = i + 1; j < bodyList.Count; j++) {
-                    var bodyB = bodyList[j];
+    private void NarrowPhase() {
+        for (var i = 0; i < contactPairs.Count; i++) {
+            var pair = contactPairs[i];
+            var bodyA = bodyList[pair.Item1];
+            var bodyB = bodyList[pair.Item2];
 
-                    if (bodyA.isStatic && bodyB.isStatic) continue;
+            if (Collisions.Collide(bodyA, bodyB, out var normal, out var depth)) {
+                SeperateBodies(bodyA, bodyB, normal * depth);
 
-                    var aabbB = bodyB.GetAABB();
-                    if (!Collisions.IntersectAABBs(aabbA, aabbB)) continue;
+                Collisions.FindContactPoint(bodyA, bodyB, out var contact1, out var contact2, out var contactCount);
+                var contact = new FlatManifold(bodyA, bodyB, normal, depth, contact1, contact2, contactCount);
 
-                    if (Collisions.Collide(bodyA, bodyB, out var normal, out var depth)) {
-                        SeperateBodies(bodyA, bodyB, normal * depth);
-
-                        Collisions.FindContactPoint(bodyA, bodyB, out var contact1, out var contact2, out var contactCount);
-                        var contact = new FlatManifold(bodyA, bodyB, normal, depth, contact1, contact2, contactCount);
-                        contactList.Add(contact);
-                    }
-                }
+                ResolveCollision(in contact);
             }
+        }
+    }
 
-            contactPointList.Clear();
-            for (var i = 0; i < contactList.Count; i++) {
-                var contact = contactList[i];
-                ResolveCollision(contact);
-
-                if (curIteration == totalIterations - 1) {
-                    if (!contactPointList.Contains(contact.contact1)) {
-                        contactPointList.Add(contact.contact1);
-                    }
-                    if (contact.contactCount > 1 && !contactPointList.Contains(contact.contact2)) {
-                        contactPointList.Add(contact.contact2);
-                    }
-                }
-            }
-            foreach (var point in contactPointList) {
-                Debug.DrawRay(point - Vector3.up * 0.25f, Vector3.up * 0.5f, Color.green, 0.05f);
-            }
+    private void StepBodies(float time, int totalIterations) {
+        for (var i = 0; i < bodyList.Count; i++) {
+            bodyList[i].Step(time, gravity, totalIterations);
         }
     }
 
