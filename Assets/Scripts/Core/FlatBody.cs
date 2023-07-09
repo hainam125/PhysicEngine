@@ -8,11 +8,13 @@ public class FlatBody
 {
     public Vector3 Position { get; private set; }
     public Vector3 LinearVelocity { get; internal set; }
-    public float Rotation { get; private set; }
-    private float rotationVelocity;
+    public float Angle { get; private set; }
+    public float AngularVelocity { get; internal set; }
 
     private Vector3 force;
 
+    public readonly ShapeType shapeType;
+    public readonly bool isStatic;
     public readonly float density;
     public readonly float mass;
     public readonly float invMass;
@@ -20,9 +22,6 @@ public class FlatBody
     public readonly float area;
     public readonly float inertia;
     public readonly float invInertia;
-
-    public readonly bool isStatic;
-
     public readonly float radius;
 
     public readonly float width, height;
@@ -35,29 +34,26 @@ public class FlatBody
     private FlatAABB aabb;
     private bool aabbUpdateRequired;
 
-    public readonly ShapeType shapeType;
 
-    public FlatBody(Vector3 position, float density, float mass, float restitution, float area,
+    public FlatBody(float density, float mass, float restitution, float area,
         bool isStatic, float radius, float width, float height, ShapeType shapeType) {
 
-        this.Position = position;
+        this.Position = Vector3.zero;
         this.LinearVelocity = Vector3.zero;
-        this.Rotation = 0f;
-        this.rotationVelocity = 0f;
-
+        this.Angle = 0f;
+        this.AngularVelocity = 0f;
         this.force = Vector3.zero;
 
+        this.shapeType = shapeType;
         this.density = density;
-        this.mass = mass;
         this.restitution = restitution;
         this.area = area;
-
         this.isStatic = isStatic;
         this.radius = radius;
         this.width = width;
         this.height = height;
-        this.shapeType = shapeType;
 
+        this.mass = mass;
         this.inertia = CalculateRotationalInertia();
 
         if (!isStatic) {
@@ -69,10 +65,8 @@ public class FlatBody
             this.invInertia = 0f;
         }
 
-
-        if(shapeType == ShapeType.Box) {
+        if (shapeType == ShapeType.Box) {
             this.vertices = CreateBoxVertices(width, height);
-            this.triangles = CreateBoxTriangles();
             this.transformedVertices = new Vector3[this.vertices.Length];
         }
         this.transformUpdateRequired = true;
@@ -102,7 +96,7 @@ public class FlatBody
         LinearVelocity += gravity * time;
 
         Position += LinearVelocity * time;
-        Rotation += rotationVelocity * time;
+        Angle += AngularVelocity * time;
 
         force = Vector3.zero;
         transformUpdateRequired = true;
@@ -122,7 +116,7 @@ public class FlatBody
     }
 
     public void Rotate(float amount) {
-        Rotation += amount;
+        Angle += amount;
         transformUpdateRequired = true;
         aabbUpdateRequired = true;
     }
@@ -133,7 +127,7 @@ public class FlatBody
 
     public Vector3[] GetTransformedVertices() {
         if (transformUpdateRequired) {
-            var transform = new FlatTransform(Position, Rotation);
+            var transform = new FlatTransform(Position, Angle);
             for(var i = 0;  i < vertices.Length; i++) {
                 var v = vertices[i];
                 transformedVertices[i] = transform.Transform(v);
@@ -185,7 +179,7 @@ public class FlatBody
     }
 
     #region Factory
-    public static bool CreateCircleBody(float radius, Vector3 position, float density, bool isStatic, float restitution,
+    public static bool CreateCircleBody(float radius, float density, bool isStatic, float restitution,
         out FlatBody body, out string errorMsg) {
 
         body = null;
@@ -194,12 +188,12 @@ public class FlatBody
         var area = radius * radius * Mathf.PI;
         if (!CheckBodyData(area, density, ref errorMsg, ref restitution, out var mass)) return false;
 
-        body = new FlatBody(position, density, mass, restitution, area, isStatic, radius, 0f, 0f, ShapeType.Circle);
+        body = new FlatBody(density, mass, restitution, area, isStatic, radius, 0f, 0f, ShapeType.Circle);
         return true;
     }
 
 
-    public static bool CreateBoxBody(float width, float height, Vector3 position, float density, bool isStatic, float restitution,
+    public static bool CreateBoxBody(float width, float height, float density, bool isStatic, float restitution,
         out FlatBody body, out string errorMsg) {
 
         body = null;
@@ -208,7 +202,7 @@ public class FlatBody
         var area = width * height;
         if (!CheckBodyData(area, density, ref errorMsg, ref restitution, out var mass)) return false;
 
-        body = new FlatBody(position, density, mass, restitution, area, isStatic, 0f, width, height, ShapeType.Box);
+        body = new FlatBody(density, mass, restitution, area, isStatic, 0f, width, height, ShapeType.Box);
         return true;
     }
 
@@ -225,17 +219,6 @@ public class FlatBody
         vertices[3] = new Vector3(left, bottom);
 
         return vertices;
-    }
-
-    private static int[] CreateBoxTriangles() {
-        int[] triangles = new int[6];
-        triangles[0] = 0;
-        triangles[1] = 1;
-        triangles[2] = 2;
-        triangles[3] = 0;
-        triangles[4] = 2;
-        triangles[5] = 3;
-        return triangles;
     }
 
     private static bool CheckBodyData(float area, float density, ref string errorMsg, ref float restitution, out float mass) {

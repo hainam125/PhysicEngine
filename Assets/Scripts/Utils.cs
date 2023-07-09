@@ -2,10 +2,10 @@ using System;
 using UnityEngine;
 
 public class Utils {
-    private static System.Random GetRandom() => new System.Random((int)(DateTime.Now.ToFileTime()%100000000));
+    private static System.Random Rand => new System.Random();
 
     public static int RandomInt(int min, int max) {
-        return GetRandom().Next(min, max);
+        return Rand.Next(min, max);
     }
 
     public static bool RandomBoolean() {
@@ -13,18 +13,19 @@ public class Utils {
     }
 
     public static float RandomFloat(float min, float max) {
-        return (float)(GetRandom().NextDouble() * (max - min) + min);
+        return (float)(Rand.NextDouble() * (max - min) + min);
     }
 
     public static Color RandomColor() {
         return UnityEngine.Random.ColorHSV();
     }
 
+    private const float SmallDistance = 0.0005f;
     public static bool NearlyEqual(float a, float b) {
-        return Mathf.Abs(a - b) < 0.0005f;//meter
+        return Mathf.Abs(a - b) < SmallDistance;//meter
     }
 
     public static bool NearlyEqual(Vector3 a, Vector3 b) {
-        return NearlyEqual(a.x, b.x) && NearlyEqual(a.y, b.y);
+        return (a - b).sqrMagnitude < SmallDistance * SmallDistance;
     }
 }

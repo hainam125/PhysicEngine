@@ -20,26 +20,26 @@ public static class Collisions {
 
         if (shapeTypeA is ShapeType.Box) {
             if (shapeTypeB is ShapeType.Box) {
-                FindContactPoint(bodyA.GetTransformedVertices(), bodyB.GetTransformedVertices(), out contact1, out contact2, out contactCount);
+                FindPolygonsContactPoint(bodyA.GetTransformedVertices(), bodyB.GetTransformedVertices(), out contact1, out contact2, out contactCount);
             }
             else if (shapeTypeB is ShapeType.Circle) {
-                FindContactPoint(bodyB.Position, bodyB.radius, bodyA.Position, bodyA.GetTransformedVertices(), out contact1);
+                FindCirclePolygonContactPoint(bodyB.Position, bodyB.radius, bodyA.Position, bodyA.GetTransformedVertices(), out contact1);
                 contactCount = 1;
             }
         }
         else if (shapeTypeA is ShapeType.Circle) {
             if (shapeTypeB is ShapeType.Box) {
-                FindContactPoint(bodyA.Position, bodyA.radius, bodyB.Position, bodyB.GetTransformedVertices(), out contact1);
+                FindCirclePolygonContactPoint(bodyA.Position, bodyA.radius, bodyB.Position, bodyB.GetTransformedVertices(), out contact1);
                 contactCount = 1;
             }
             else if (shapeTypeB is ShapeType.Circle) {
-                FindContactPoint(bodyA.Position, bodyA.radius, bodyB.Position, out contact1);
+                FindCirclesContactPoint(bodyA.Position, bodyA.radius, bodyB.Position, out contact1);
                 contactCount = 1;
             }
         }
     }
 
-    private static void FindContactPoint(Vector3[] verticesA, Vector3[] verticesB,
+    private static void FindPolygonsContactPoint(Vector3[] verticesA, Vector3[] verticesB,
         out Vector3 contact1, out Vector3 contact2, out int contactCount) {
 
         contact1 = contact2 = Vector3.zero;
@@ -73,7 +73,7 @@ public static class Collisions {
         check(verticesB, verticesA, ref contact1, ref contact2, ref contactCount);
     }
 
-    private static void FindContactPoint(Vector3 circleCenter, float circleRadius,
+    private static void FindCirclePolygonContactPoint(Vector3 circleCenter, float circleRadius,
         Vector3 polygonCenter, Vector3[] polygonVertices, out Vector3 cp) {
 
         cp = Vector3.zero;
@@ -105,7 +105,7 @@ public static class Collisions {
         distSqr = (p - closestPoint).sqrMagnitude;
     }
 
-    private static void FindContactPoint(Vector3 centerA, float radiusA, Vector3 centerB, out Vector3 cp) {
+    private static void FindCirclesContactPoint(Vector3 centerA, float radiusA, Vector3 centerB, out Vector3 cp) {
         var dir = (centerB - centerA).normalized;
         cp = centerA + dir * radiusA;
     }

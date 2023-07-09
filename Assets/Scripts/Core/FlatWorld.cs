@@ -41,12 +41,13 @@ public class FlatWorld {
         return true;
     }
 
-    public void Step(float time, int iterations) {
-        iterations = Mathf.Clamp(iterations, MinIterations, MaxIterations);
-        for(var it = 0; it < iterations; it++) {
+    public void Step(float time, int totalIterations) {
+        totalIterations = Mathf.Clamp(totalIterations, MinIterations, MaxIterations);
+
+        for (var curIteration = 0; curIteration < totalIterations; curIteration++) {
             //movement
             for (var i = 0; i < bodyList.Count; i++) {
-                bodyList[i].Step(time, gravity, iterations);
+                bodyList[i].Step(time, gravity, totalIterations);
             }
 
             contactList.Clear();
@@ -63,16 +64,7 @@ public class FlatWorld {
                     if (!Collisions.IntersectAABBs(aabbA, aabbB)) continue;
 
                     if (Collisions.Collide(bodyA, bodyB, out var normal, out var depth)) {
-                        if (bodyA.isStatic) {
-                            bodyB.Move(normal * depth);
-                        }
-                        else if (bodyB.isStatic) {
-                            bodyA.Move(-normal * depth);
-                        }
-                        else {
-                            bodyA.Move(-normal * depth * 0.5f);
-                            bodyB.Move(normal * depth * 0.5f);
-                        }
+                        SeperateBodies(bodyA, bodyB, normal * depth);
 
                         Collisions.FindContactPoint(bodyA, bodyB, out var contact1, out var contact2, out var contactCount);
                         var contact = new FlatManifold(bodyA, bodyB, normal, depth, contact1, contact2, contactCount);
@@ -82,9 +74,11 @@ public class FlatWorld {
             }
 
             contactPointList.Clear();
-            for (var i =0; i < contactList.Count; i++) {
+            for (var i = 0; i < contactList.Count; i++) {
                 var contact = contactList[i];
-                if (contact.contactCount > 0) {
+                ResolveCollision(contact);
+
+                if (curIteration == totalIterations - 1) {
                     if (!contactPointList.Contains(contact.contact1)) {
                         contactPointList.Add(contact.contact1);
                     }
@@ -92,11 +86,23 @@ public class FlatWorld {
                         contactPointList.Add(contact.contact2);
                     }
                 }
-                ResolveCollision(contact);
             }
             foreach (var point in contactPointList) {
                 Debug.DrawRay(point - Vector3.up * 0.25f, Vector3.up * 0.5f, Color.green, 0.05f);
             }
+        }
+    }
+
+    private void SeperateBodies(FlatBody bodyA, FlatBody bodyB, Vector3 minimumTranslationVector) {
+        if (bodyA.isStatic) {
+            bodyB.Move(minimumTranslationVector);
+        }
+        else if (bodyB.isStatic) {
+            bodyA.Move(-minimumTranslationVector);
+        }
+        else {
+            bodyA.Move(-minimumTranslationVector * 0.5f);
+            bodyB.Move(minimumTranslationVector * 0.5f);
         }
     }
 
