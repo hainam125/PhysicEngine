@@ -19,4 +19,9 @@ public readonly struct FlatManifold {
         this.contact2 = contact2;
         this.contactCount = contactCount;
     }
+
+    public Vector3 GetContact(int i) {
+        if (i == 1) return contact2;
+        return contact1;
+    }
 }

@@ -79,7 +79,7 @@ public class FlatWorld {
                 Collisions.FindContactPoint(bodyA, bodyB, out var contact1, out var contact2, out var contactCount);
                 var contact = new FlatManifold(bodyA, bodyB, normal, depth, contact1, contact2, contactCount);
 
-                ResolveCollision(in contact);
+                ResolveCollisionWithRotation(in contact);
             }
         }
     }
@@ -103,11 +103,10 @@ public class FlatWorld {
         }
     }
 
-    private void ResolveCollision(in FlatManifold contact) {
+    private void ResolveCollisionBasic(in FlatManifold contact) {
         var bodyA = contact.bodyA;
         var bodyB = contact.bodyB;
         var normal = contact.normal;
-        var depth = contact.depth;
 
         var relativeVel = bodyB.LinearVelocity - bodyA.LinearVelocity;
 
@@ -125,6 +124,60 @@ public class FlatWorld {
 
         bodyA.LinearVelocity -= impulse * bodyA.invMass;
         bodyB.LinearVelocity += impulse * bodyB.invMass;
+    }
+
+    private void ResolveCollisionWithRotation(in FlatManifold contact) {
+        var bodyA = contact.bodyA;
+        var bodyB = contact.bodyB;
+        var normal = contact.normal;
+        var contactCount = contact.contactCount;
+
+        var e = Mathf.Min(bodyA.restitution, bodyB.restitution);
+
+        var aLinearVelocity = bodyA.LinearVelocity;
+        var aAngularVelocity = bodyA.AngularVelocity;
+        var bLinearVelocity = bodyB.LinearVelocity;
+        var bAngularVelocity = bodyB.AngularVelocity;
+
+        for (var i = 0; i < contactCount; i++) {
+            var rA = contact.GetContact(i) - bodyA.Position;
+            var rB = contact.GetContact(i) - bodyB.Position;
+            var raPerp = rA.PerpXY();
+            var rbPerp = rB.PerpXY();
+
+            var angularLinearVelA = aAngularVelocity * raPerp;
+            var angularLinearVelB = bAngularVelocity * rbPerp;
+
+            var relativeVel =
+                (bLinearVelocity + angularLinearVelB) -
+                (aLinearVelocity + angularLinearVelA);
+
+            var contactVelMag = Vector3.Dot(relativeVel, normal);
+
+            //if objects moving apart
+            if (contactVelMag > 0) {
+                continue;
+            }
+
+            var raPerpDotN = Vector3.Dot(raPerp, normal);
+            var rbPerpDotN = Vector3.Dot(rbPerp, normal);
+
+            var denom = bodyA.invMass + bodyB.invMass +
+                raPerpDotN * raPerpDotN * bodyA.invInertia +
+                rbPerpDotN * rbPerpDotN * bodyB.invInertia;
+
+            var j = -(1 + e) * contactVelMag;
+            j /= denom;
+            j /= contactCount;
+
+            var impulse = j * normal;
+
+
+            bodyA.LinearVelocity -= impulse * bodyA.invMass;
+            bodyA.AngularVelocity -= Utils.Cross(rA, impulse) * bodyA.invInertia;
+            bodyB.LinearVelocity += impulse * bodyB.invMass;
+            bodyB.AngularVelocity += Utils.Cross(rB, impulse) * bodyB.invInertia;
+        }
     }
 }
 

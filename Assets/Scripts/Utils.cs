@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-public class Utils {
+public static class Utils {
     private static System.Random Rand => new System.Random();
 
     public static int RandomInt(int min, int max) {
@@ -27,5 +27,14 @@ public class Utils {
 
     public static bool NearlyEqual(Vector3 a, Vector3 b) {
         return (a - b).sqrMagnitude < SmallDistance * SmallDistance;
+    }
+
+    public static Vector3 PerpXY(this Vector3 v) {
+        return new Vector3(-v.y, v.x);
+    }
+
+    public static float Cross(Vector3 a, Vector3 b) {
+        // cz = ax * by − ay * bx
+        return a.x * b.y - a.y * b.x;
     }
 }

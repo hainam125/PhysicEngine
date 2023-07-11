@@ -46,10 +46,10 @@ public class Game : MonoBehaviour
         var padding = (right - left) * 0.1f;
 
         var body = CreateBox(right - left - padding * 2, 3f, new Vector3(0, -10), true, Color.gray);
-        /*body = CreateBox(20f, 2f, new Vector3(-10, 3f), true, Color.cyan);
+        body = CreateBox(20f, 2f, new Vector3(-10, 3f), true, Color.cyan);
         body.Rotate(-20 * Mathf.Deg2Rad);
         body = CreateBox(15f, 2f, new Vector3(10, 10f), true, Color.cyan);
-        body.Rotate(20 * Mathf.Deg2Rad);*/
+        body.Rotate(20 * Mathf.Deg2Rad);
     }
 
     private FlatBody CreateBox(float width, float height, Vector3 position, bool isStatic, Color color) {
