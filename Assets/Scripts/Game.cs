@@ -1,11 +1,14 @@
 using System.Diagnostics;
 using System.Collections.Generic;
 using UnityEngine;
+using FlatEngine;
 
 using Debug = UnityEngine.Debug;
 
-public class Game : MonoBehaviour
-{
+public class Game : MonoBehaviour {
+    [SerializeField] private float bounciness = 0.5f;
+    [SerializeField] private float staticFriction = 0.6f;
+    [SerializeField] private float dynamicFriction = 0.4f;
     private Factory factory;
 
     private FlatWorld world;
@@ -35,57 +38,28 @@ public class Game : MonoBehaviour
         srList = new List<ShapeRenderer>();
         world = new FlatWorld();
 
-        CreateGravity();
+        Initialize();
 
         watch = new Stopwatch();
         sampleTimer = new Stopwatch();
         sampleTimer.Start();
     }
 
-    private void CreateGravity() {
-        var padding = (right - left) * 0.1f;
-
-        var body = CreateBox(right - left - padding * 2, 3f, new Vector3(0, -10), true, Color.gray);
-        body = CreateBox(20f, 2f, new Vector3(-10, 3f), true, Color.cyan);
-        body.Rotate(-20 * Mathf.Deg2Rad);
-        body = CreateBox(15f, 2f, new Vector3(10, 10f), true, Color.cyan);
-        body.Rotate(20 * Mathf.Deg2Rad);
-    }
-
-    private FlatBody CreateBox(float width, float height, Vector3 position, bool isStatic, Color color) {
-        FlatBody.CreateBoxBody(width, height, 1f, isStatic, 0.5f, out var body, out _);
-        body.MoveTo(position);
-        world.AddBody(body);
-        var sr = factory.CreateRectangle(width, height);
-        sr.SetColor(color);
-        srList.Add(sr);
-        return body;
-    }
-
-    private void CreateCircle(float radius, Vector3 position, bool isStatic, Color color) {
-        FlatBody.CreateCircleBody(radius, 1f, isStatic, 0.5f, out var body, out _);
-        body.MoveTo(position);
-        world.AddBody(body);
-        var sr = factory.CreateCircle(radius);
-        sr.SetColor(color);
-        srList.Add(sr);
-    }
-
     private void Update() {
         var deltaTime = Time.deltaTime;
 
         if (Input.GetMouseButtonDown(0)) {
-            var width = Utils.RandomFloat(2f, 3f);
-            var height = Utils.RandomFloat(2f, 3f);
+            var width = FlatUtils.RandomFloat(2f, 3f);
+            var height = FlatUtils.RandomFloat(2f, 3f);
             var mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             mousePos.z = 0;
-            CreateBox(width, height, mousePos, false, Utils.RandomColor());
+            CreateBox(width, height, mousePos, false, FlatUtils.RandomColor());
         }
         if (Input.GetMouseButtonDown(1)) {
-            var radius = Utils.RandomFloat(1.25f, 1.5f);
+            var radius = FlatUtils.RandomFloat(1.25f, 1.5f);
             var mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             mousePos.z = 0;
-            CreateCircle(radius, mousePos, false, Utils.RandomColor());
+            CreateCircle(radius, mousePos, false, FlatUtils.RandomColor());
         }
 
         if (sampleTimer.Elapsed.TotalSeconds > 1d) {
@@ -105,13 +79,14 @@ public class Game : MonoBehaviour
         totalBodyCount += world.BodyCount;
         totalSampleCount++;
 
+        //draw
         removeBodyIndices.Clear();
         for (var i = 0; i < world.BodyCount; i++) {
             if (!world.GetBody(i, out var flatBody)) continue;
             var sr = srList[i];
             sr.Pos = flatBody.Position;
             sr.Rot = flatBody.Angle;
-            //flatBody.DrawDebug();
+            flatBody.collider.DrawDebug();
 
             var box = flatBody.GetAABB();
             if (box.Max.y < bottom && !flatBody.isStatic) removeBodyIndices.Add((flatBody, sr));
@@ -121,7 +96,37 @@ public class Game : MonoBehaviour
             srList.Remove(removeBodyIndices[i].Item2);
             Destroy(removeBodyIndices[i].Item2.gameObject);
         }
+    }
 
+    private void Initialize() {
+        var padding = (right - left) * 0.1f;
+
+        var body = CreateBox(right - left - padding * 2, 3f, new Vector3(0, -10), true, Color.gray);
+        body = CreateBox(20f, 2f, new Vector3(-10, 3f), true, Color.cyan);
+        body.Rotate(-20 * Mathf.Deg2Rad);
+        body = CreateBox(15f, 2f, new Vector3(10, 10f), true, Color.cyan);
+        body.Rotate(20 * Mathf.Deg2Rad);
+    }
+
+    private FlatBody CreateBox(float width, float height, Vector3 position, bool isStatic, Color color) {
+        var mass = width * height;
+        var body = FlatBody.CreateBoxBody(width, height, isStatic, mass, bounciness, staticFriction, dynamicFriction);
+        body.MoveTo(position);
+        world.AddBody(body);
+        var sr = factory.CreateRectangle(width, height);
+        sr.SetColor(color);
+        srList.Add(sr);
+        return body;
+    }
+
+    private void CreateCircle(float radius, Vector3 position, bool isStatic, Color color) {
+        var mass = radius * radius * Mathf.PI;
+        var body = FlatBody.CreateCircleBody(radius, isStatic, mass, bounciness, staticFriction, dynamicFriction);
+        body.MoveTo(position);
+        world.AddBody(body);
+        var sr = factory.CreateCircle(radius);
+        sr.SetColor(color);
+        srList.Add(sr);
     }
 
     private void OnGUI() {
