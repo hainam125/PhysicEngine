@@ -22,8 +22,9 @@ public class FlatBody
     public readonly float area;
     public readonly float inertia;
     public readonly float invInertia;
-    public readonly float radius;
+    public readonly float staticFriction, dynamicFriction;
 
+    public readonly float radius;
     public readonly float width, height;
     public readonly int[] triangles;
     private readonly Vector3[] vertices;
@@ -49,12 +50,16 @@ public class FlatBody
         this.restitution = restitution;
         this.area = area;
         this.isStatic = isStatic;
+
         this.radius = radius;
         this.width = width;
         this.height = height;
 
         this.mass = mass;
         this.inertia = CalculateRotationalInertia();
+
+        this.staticFriction = 0.6f;
+        this.dynamicFriction = 0.4f;
 
         if (!isStatic) {
             this.invMass = 1f / mass;
